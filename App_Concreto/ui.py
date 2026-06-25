@@ -1,82 +1,56 @@
-import flet as ft
-from App_Concreto.calculos import calcular_volume, calcular_materiais
+import streamlit as st
+from calculos import calcular_volume, calcular_materiais, recomendar_aco
 
-def main(page: ft.Page):
-    page.title = "Calculadora de Concreto Civil"
-    page.theme_mode = ft.ThemeMode.LIGHT
+st.title("🏗️ Calculadora para Construção Civil")
+st.caption("Ferramenta prática para estimar materiais e aço")
 
-    # Cabeçalho
-    titulo = ft.Text(
-        "🏗️ Calculadora de Concreto Civil",
-        size=24,
-        weight=ft.FontWeight.BOLD,
-        color=ft.Colors.BLUE_900
-    )
-    subtitulo = ft.Text(
-        "Informe as dimensões e o tipo de elemento estrutural",
-        size=16,
-        color=ft.Colors.BLUE_600
-    )
+# Abas
+aba = st.tabs(["Calculadora", "Tabela de Referência"])
 
-    # Campos de entrada
-    largura = ft.TextField(label="Largura (m)", width=150)
-    altura = ft.TextField(label="Altura (m)", width=150)
-    comprimento = ft.TextField(label="Comprimento (m)", width=150)
+# ---------------------------
+# Aba 1: Calculadora
+# ---------------------------
+with aba[0]:
+    st.subheader("Informe as dimensões e o tipo de elemento estrutural")
 
-    tipo = ft.Dropdown(
-        label="Tipo de elemento",
-        options=[
-            ft.dropdown.Option("viga_pilar"),
-            ft.dropdown.Option("baldrame"),
-            ft.dropdown.Option("laje_25"),
-            ft.dropdown.Option("laje_30"),
-        ],
-        width=200
+    largura = st.number_input("Largura (m)", min_value=0.0, step=0.1)
+    altura = st.number_input("Altura (m)", min_value=0.0, step=0.1)
+    comprimento = st.number_input("Comprimento (m)", min_value=0.0, step=0.1)
+
+    tipo = st.selectbox(
+        "Tipo de elemento",
+        ["viga_pilar", "baldrame", "laje_25", "laje_30"]
     )
 
-    # Resultado
-    resultado = ft.Text("", size=16, color=ft.Colors.BLACK)
-
-    # Função de cálculo
-    def calcular(e):
+    if st.button("Calcular"):
         try:
-            vol = calcular_volume(float(largura.value), float(altura.value), float(comprimento.value))
-            materiais = calcular_materiais(tipo.value, vol)
-            resultado.value = (
-                f"📐 Volume total: {materiais['volume_total']} m³\n"
-                f"🏗️ Fck: {materiais['fck']} MPa\n"
-                f"🧱 Cimento: {materiais['cimento']} sacos\n"
-                f"🏖️ Areia: {materiais['areia']} m³\n"
-                f"🪨 Brita: {materiais['brita']} m³"
+            vol = calcular_volume(largura, altura, comprimento)
+            materiais = calcular_materiais(tipo, vol)
+            recomendacao = recomendar_aco(tipo, vol)
+
+            st.success(
+                f"""
+                📐 Volume total: {materiais['volume_total']} m³  
+                🏗️ Fck: {materiais['fck']} MPa  
+                🧱 Cimento: {materiais['cimento']} sacos  
+                🏖️ Areia: {materiais['areia']} m³  
+                🪨 Brita: {materiais['brita']} m³  
+                🔩 Aço recomendado: {recomendacao['aco']}  
+                📏 Bitola sugerida: {recomendacao['bitola']}
+                """
             )
-            page.update()
         except Exception as ex:
-            resultado.value = f"Erro: {ex}"
-            page.update()
+            st.error(f"Erro: {ex}")
 
-    # Botão
-    btn_calcular = ft.ElevatedButton(
-        "Calcular",
-        bgcolor=ft.Colors.GREEN_600,
-        color=ft.Colors.WHITE,
-        style=ft.ButtonStyle(
-            shape=ft.RoundedRectangleBorder(radius=10),
-            padding=20
-        ),
-        on_click=calcular
-    )
+# ---------------------------
+# Aba 2: Tabela de Referência
+# ---------------------------
+with aba[1]:
+    st.subheader("📊 Tabela de Referência")
 
-    # Layout organizado
-    page.add(
-    titulo,
-    subtitulo,
-    ft.Row([largura, altura, comprimento], alignment=ft.MainAxisAlignment.CENTER),
-    tipo,
-    btn_calcular,
-    ft.Container(
-        resultado,
-        padding=20,
-        border=ft.Border.all(1, ft.Colors.GREY),
-        border_radius=10
-    )
-)
+    st.table({
+        "Elemento": ["Viga/Pilar", "Baldrame", "Laje 25 cm", "Laje 30 cm"],
+        "Fck (MPa)": [25, 20, 25, 30],
+        "Aço recomendado": ["CA-50", "CA-50", "CA-25", "CA-25"],
+        "Bitola sugerida": ["10–20 mm", "8–12.5 mm", "6–10 mm", "8–12.5 mm"]
+    })

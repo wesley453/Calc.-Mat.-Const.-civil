@@ -8,6 +8,14 @@ REGRAS_FCK = {
     "laje_30": {"fck": 30, "cimento_por_m3": 9.0, "areia_por_m3": 0.48, "brita_por_m3": 0.55},
 }
 
+# Regras de recomendação de aço por tipo de elemento (base simplificada da NBR 6118)
+REGRAS_ACO = {
+    "viga_pilar": {"aco": "CA-50", "bitola_min": "10 mm", "bitola_max": "20 mm"},
+    "baldrame": {"aco": "CA-50", "bitola_min": "8 mm", "bitola_max": "12.5 mm"},
+    "laje_25": {"aco": "CA-25", "bitola_min": "6 mm", "bitola_max": "10 mm"},
+    "laje_30": {"aco": "CA-25", "bitola_min": "8 mm", "bitola_max": "12.5 mm"},
+}
+
 def calcular_volume(largura: float, altura: float, comprimento: float) -> float:
     """
     Calcula o volume de um elemento estrutural em m³.
@@ -17,13 +25,6 @@ def calcular_volume(largura: float, altura: float, comprimento: float) -> float:
 def calcular_materiais(tipo: str, volume: float) -> dict:
     """
     Calcula a quantidade de materiais necessários para um determinado tipo de concreto.
-    
-    Args:
-        tipo (str): Tipo de elemento estrutural (ex: 'viga_pilar', 'baldrame').
-        volume (float): Volume em m³.
-    
-    Returns:
-        dict: Quantidades de cimento, areia e brita, além do fck e volume total.
     """
     if tipo not in REGRAS_FCK:
         raise ValueError(f"Tipo '{tipo}' não encontrado. Tipos válidos: {list(REGRAS_FCK.keys())}")
@@ -42,4 +43,25 @@ def calcular_materiais(tipo: str, volume: float) -> dict:
         "cimento": cimento,
         "areia": areia,
         "brita": brita
+    }
+
+def recomendar_aco(tipo: str, volume: float) -> dict:
+    """
+    Retorna recomendações de aço e bitola com base no tipo de elemento e volume.
+    Ajusta bitola conforme volume (simplificação da NBR 6118).
+    """
+    if tipo not in REGRAS_ACO:
+        raise ValueError(f"Tipo '{tipo}' não encontrado. Tipos válidos: {list(REGRAS_ACO.keys())}")
+
+    regra = REGRAS_ACO[tipo]
+
+    # Ajuste simplificado: quanto maior o volume, maior a bitola recomendada
+    if volume <= 1.0:
+        bitola = regra["bitola_min"]
+    else:
+        bitola = regra["bitola_max"]
+
+    return {
+        "aco": regra["aco"],
+        "bitola": bitola
     }
