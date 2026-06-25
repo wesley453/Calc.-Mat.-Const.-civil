@@ -1,0 +1,12 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Rodar Calculadora de Concreto",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "App_Concreto.main",
+            "console": "integratedTerminal"
+        }
+    ]
+}
